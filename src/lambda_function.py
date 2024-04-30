@@ -17,7 +17,6 @@ from datetime import datetime
 import csv
 from util.chatwork import Chatwork
 import json
-import boto3
 from util.chatwork_util import Chatwork_Util
 
 def lambda_handler(event, context):
@@ -35,9 +34,6 @@ def lambda_handler(event, context):
     login_url = "https://part.shufu-job.jp/console/login"
     upload_url = "https://part.shufu-job.jp/console/c_orders/upload"
     download_url = "https://part.shufu-job.jp/console/c_orders/search"
-
-    # s3クライアントの作成
-    s3 = boto3.client('s3')
 
     # chatworkのエラー通知先設定の呼び出し
     room_id = "356389186"
@@ -91,6 +87,10 @@ def lambda_handler(event, context):
     # Open the Spreadsheet with the ID
     spreadsheet = client.open_by_key(spreadsheet_id)
     sheet = spreadsheet.worksheet(company_name)
+    # total_job_listのタブとid_listのタブを取得
+    total_job_list = spreadsheet.worksheet('total_job_list')
+    id_list = spreadsheet.worksheet('id_list')
+    trash = spreadsheet.worksheet('trash')
 
     # ワークシートのデータを取り出す
     data = sheet.get_all_values()
@@ -131,6 +131,7 @@ def lambda_handler(event, context):
         df = df.replace('\u2047', '', regex=True) #⁇
         df = df.replace('\u2730', '', regex=True) #✰
         df = df.replace('\u0f1a', '', regex=True) #。
+        df = df.replace('\u2002', '', regex=True)
 
         # DataFrame を CSV ファイルに出力
         df.to_csv(input_file_path, sep=',', encoding='CP932', index=False)
@@ -235,23 +236,77 @@ def lambda_handler(event, context):
                 # 各行を順に表示
                 for row in reader:
                     print(row)
-            # シート
-            success = write_posted_joblist(sheet,company_name)
+
+            print('スプレッドシートへの書き込み開始')
+
+            # total_job_listのタブに一旦すべての求人を添付
+            success = write_total_joblist(total_job_list,company_name)
+
+            # total_job_listというタブについて、'求人ID'というヘッダーがある列を取得
+            job_id_col_num_total = total_job_list.find("求人ID").col
+            job_id_data_total = total_job_list.col_values(job_id_col_num_total)[1:]
+            print(job_id_col_num_total)
+
+            # id_listというタブについて、'求人ID'というヘッダーがある列の値を取得
+            job_id_col_num_list = id_list.find("求人ID").col
+            original_id_col_list = id_list.find('original_id').col
+            job_id_data_list = id_list.col_values(job_id_col_num_list)[1:]
+            print(job_id_col_num_list)
+
+            # id_listにこれまで出稿した求人の求人ID（しゅふじょぶ側）とこちら側で作成したunique_idのリストを作成
+            update_id_list(job_id_col_num_list, job_id_data_total, job_id_data_list,id_list)
+            print('update_complete')
+
+            # unique_idのリストを作成（total_job_listへの書き込み用）
+            original_id_col_num_total, original_id_data_total = align_unique_id(total_job_list, job_id_data_total,
+                                                                                job_id_data_list,
+                                                                                original_id_col_list, id_list)
+
+            # total_job_listのoriginal_id列を更新
+            update_cells(total_job_list, original_id_col_num_total, original_id_data_total)
+
+            # [company_name]タブにある同じ行の求人ＩＤとoriginal_idをリスト化
+            p_id_list = get_id_info(sheet)
+
+            # trashのタブにもう必要ない求人の求人IDとoriginal_idを付与
+            get_trash_data(p_id_list, trash, job_id_col_num_list, id_list)
+
+            # 必要のない求人IDの求人をのけたデータを挿入
+            remove_duplicates(sheet, trash, job_id_data_total, total_job_list)
+
+            # 転記成功のメッセージを送信
+            success = []
+            message = f"転記成功\n案件名：{company_name}"
+            success.append(message)
             chatwork = Chatwork(room_id, success, operator)
             chatwork.send_alert_for_chatwork()
 
         except Exception as e:
-            message = f"求人の書き込みに失敗しました.\nシートの書き込みを阻害する要素があります。\n{str(e)}\n案件名：{company_name}"
-            messages.append(message)
-            chatwork = Chatwork(room_id, messages, operator)
-            chatwork.send_alert_for_chatwork()
+            if 'PERMISSION_DENIED' in str(e):
+                exception = f"サービスアカウントへの編集権限が付与されておりません.\n{str(e)}\n案件名：{company_name}"
+                print(exception)
+                messages.append(exception)
+                chatwork = Chatwork(room_id, messages, operator)
+                chatwork.send_alert_for_chatwork()
+            elif 'edit a protected cell or object' in str(e):
+                exception = f"スプレッドシートの一部のセルが保護されている可能性があります.\n{str(e)}\n案件名：{company_name}"
+                print(exception)
+                messages.append(exception)
+                chatwork = Chatwork(room_id, messages, operator)
+                chatwork.send_alert_for_chatwork()
+            else:
+                # エラーが発生した場合、そのエラーメッセージを出力
+                message = f"求人の書き込みに失敗しました.\nシートの書き込みを阻害する要素があります。\n{str(e)}\n案件名：{company_name}"
+                messages.append(message)
+                chatwork = Chatwork(room_id, messages, operator)
+                chatwork.send_alert_for_chatwork()
         filename = delete_file()
         print(filename)
 
 if __name__ == '__main__':
     lambda_handler(
         event={
-            'sheetId':'1ASZKYDXXCnWKsh4xOs82wlvfMhqIVOIicYZmZ8LbPh8',
+            'sheetId':'1l-lyjJlmSjwovYsxS0H7Ek9JsjwEFZz3zSXNc2Bq_jA',
             'companyName':'dym'
 
                },
