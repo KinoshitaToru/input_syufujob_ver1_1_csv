@@ -19,6 +19,7 @@ import glob
 import pdb
 import sys
 import uuid
+import time
 
 
 login_url = "https://part.shufu-job.jp/console/login"
@@ -313,6 +314,7 @@ def csv_checker():
             print(row)
 
 def write_total_joblist(sheet, company_name):
+    print('write1')
     # Get all data from sheet
     all_data = sheet.get_all_values()
 
@@ -341,6 +343,8 @@ def write_total_joblist(sheet, company_name):
     col_data = {header: [row[header] for row in data] for header in data[0].keys()}
     # スプレッドシートのヘッダとCSVのヘッダを比較
     spreadsheet_headers = sheet.row_values(1)  # ヘッダが1行目にあると仮定
+
+    print('write2')
 
     #　転記ステータスに済を追加する
     status_header = "転記ステータス"
@@ -531,18 +535,23 @@ def remove_duplicates(sheet, trash, job_id_data_total, total_job_list):
 
     # Get all data from sheet
     all_data = sheet.get_all_values()
+    time.sleep(1)  # API制限を回避するためのウェイト
 
     # Keep data of first row
     keep_data = [all_data[0]]
+    time.sleep(1)  # API制限を回避するためのウェイト
 
     # clear all data from sheet
     sheet.clear()
+    time.sleep(1)  # API制限を回避するためのウェイト
 
     # Write back the data to keep
     sheet.append_rows(keep_data)
+    time.sleep(1)  # API制限を回避するためのウェイト
 
     # dymシートの2行目以降にデータを追加
     sheet.insert_rows(new_rows, 2)  # 2は行番号を指定，つまり2行目に追加
+    time.sleep(1)  # API制限を回避するためのウェイト
 
 
 
