@@ -426,8 +426,10 @@ def align_unique_id(total_job_list, job_id_data_total,job_id_data_list, original
             matching_row = id_list.find(job_id).row
             original_id = id_list.cell(matching_row, original_id_col_list).value
             original_id_data_total.append(original_id)
+            time.sleep(1)
         else:
             original_id_data_total.append("")  # 求人IDが一致しない場合は空の文字列を追加
+            time.sleep(1)
     return original_id_col_num_total, original_id_data_total
 
 def update_cells(sheet, col_num, data_list):
@@ -521,6 +523,7 @@ def get_trash_data(p_id_list, trash, job_id_col_num_list, id_list):
             already_seen.add(value)
 
 def remove_duplicates(sheet, trash, job_id_data_total, total_job_list):
+    time.sleep(60)
     # trashというタブについて、'求人ID'というヘッダーがある列を取得
     trash_id_col_num = trash.find("求人ID").col
     trash_id_datas = trash.col_values(trash_id_col_num)[1:]
@@ -532,7 +535,9 @@ def remove_duplicates(sheet, trash, job_id_data_total, total_job_list):
 
     # それぞれの行のデータを取得しリストにまとめる
     new_rows = [total_job_list.row_values(row_num) for row_num in new_row_nums]
+    print(new_rows)
 
+    time.sleep(10)
     # Get all data from sheet
     all_data = sheet.get_all_values()
     time.sleep(1)  # API制限を回避するためのウェイト
