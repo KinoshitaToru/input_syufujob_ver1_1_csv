@@ -68,10 +68,16 @@ def lambda_handler(event, context):
     if 'win' not in sys.platform:
         clear_tmp_directory()
 
-    # （あなたのサービスアカウント用）Google APIに接続
+    # （service.json）Google APIに接続
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name('service.json', scope)
     client = gspread.authorize(creds)
+
+    # （service2.json）Google APIに接続
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds2 = ServiceAccountCredentials.from_json_keyfile_name('service2.json', scope)
+    client2 = gspread.authorize(creds2)
+
 
     # マスターシートから情報を取得（ログイン情報）
     try:
@@ -84,13 +90,22 @@ def lambda_handler(event, context):
         chatwork = Chatwork(room_id, messages, operator)
         chatwork.send_alert_for_chatwork()
 
-    # Open the Spreadsheet with the ID
+    # Open the Spreadsheet with the ID(service.json)
     spreadsheet = client.open_by_key(spreadsheet_id)
     sheet = spreadsheet.worksheet(company_name)
     # total_job_listのタブとid_listのタブを取得
     total_job_list = spreadsheet.worksheet('total_job_list')
     id_list = spreadsheet.worksheet('id_list')
     trash = spreadsheet.worksheet('trash')
+
+    # Open the Spreadsheet with the ID(service2.json)
+    spreadsheet2 = client2.open_by_key(spreadsheet_id)
+    sheet2 = spreadsheet2.worksheet(company_name)
+    # total_job_listのタブとid_listのタブを取得
+    total_job_list2 = spreadsheet2.worksheet('total_job_list')
+    id_list2 = spreadsheet2.worksheet('id_list')
+    trash2 = spreadsheet2.worksheet('trash')
+
 
     # ワークシートのデータを取り出す
     data = sheet.get_all_values()
@@ -133,6 +148,7 @@ def lambda_handler(event, context):
         df = df.replace('\u0f1a', '', regex=True) #。
         df = df.replace('\u2002', '', regex=True)
         df = df.replace('\ufe0f', '', regex=True)
+        df = df.replace('\u02da', '', regex=True)
 
         # DataFrame を CSV ファイルに出力
         df.to_csv(input_file_path, sep=',', encoding='CP932', index=False)
@@ -253,27 +269,35 @@ def lambda_handler(event, context):
             original_id_col_list = id_list.find('original_id').col
             job_id_data_list = id_list.col_values(job_id_col_num_list)[1:]
             print(job_id_col_num_list)
+            print(original_id_col_list)
 
             # id_listにこれまで出稿した求人の求人ID（しゅふじょぶ側）とこちら側で作成したunique_idのリストを作成
-            update_id_list(job_id_col_num_list, job_id_data_total, job_id_data_list,id_list)
+            update_id_list(job_id_col_num_list, job_id_data_total, job_id_data_list, id_list)
             print('update_complete')
 
-            # unique_idのリストを作成（total_job_listへの書き込み用）
-            original_id_col_num_total, original_id_data_total = align_unique_id(total_job_list, job_id_data_total,
-                                                                                job_id_data_list,
-                                                                                original_id_col_list, id_list)
+            # ここからservice2.jsonを使用
 
+            # unique_idのリストを作成（total_job_listへの書き込み用）
+            original_id_col_num_total, original_id_data_total = align_unique_id(total_job_list2, job_id_data_total,
+                                                                                job_id_data_list,
+                                                                                original_id_col_list, id_list2)
+
+            print("align_unique_id完了")
             # total_job_listのoriginal_id列を更新
-            update_cells(total_job_list, original_id_col_num_total, original_id_data_total)
+            update_cells(total_job_list2, original_id_col_num_total, original_id_data_total)
+            print("update_cells完了")
 
             # [company_name]タブにある同じ行の求人ＩＤとoriginal_idをリスト化
-            p_id_list = get_id_info(sheet)
+            p_id_list = get_id_info(sheet2)
+            print("get_id_info完了")
 
             # trashのタブにもう必要ない求人の求人IDとoriginal_idを付与
-            get_trash_data(p_id_list, trash, job_id_col_num_list, id_list)
+            get_trash_data(p_id_list, trash2, job_id_col_num_list, id_list2)
+            print("get_trash_data完了")
 
             # 必要のない求人IDの求人をのけたデータを挿入
-            remove_duplicates(sheet, trash, job_id_data_total, total_job_list)
+            remove_duplicates(sheet2, trash2, job_id_data_total, total_job_list2)
+            print("remove_duplicates完了")
 
             # 転記成功のメッセージを送信
             success = []

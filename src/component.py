@@ -420,16 +420,21 @@ def align_unique_id(total_job_list, job_id_data_total,job_id_data_list, original
 
     original_id_data_total = []
 
+    id_list_values = id_list.get_all_values()
+
     print(original_id_col_list)
     for job_id in job_id_data_total:
         if job_id in job_id_data_list:
-            matching_row = id_list.find(job_id).row
-            original_id = id_list.cell(matching_row, original_id_col_list).value
-            original_id_data_total.append(original_id)
-            time.sleep(1)
+            matching_row = next((i for i, row in enumerate(id_list_values) if job_id in row), None)
+            print(matching_row)
+            if matching_row is not None:
+                original_id = id_list_values[matching_row][original_id_col_list - 1]
+                original_id_data_total.append(original_id)
+            else:
+                # If no matching row is found, add an empty string.
+                original_id_data_total.append("")
         else:
             original_id_data_total.append("")  # 求人IDが一致しない場合は空の文字列を追加
-            time.sleep(1)
     return original_id_col_num_total, original_id_data_total
 
 def update_cells(sheet, col_num, data_list):
