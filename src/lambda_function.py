@@ -150,6 +150,7 @@ def lambda_handler(event, context):
         df = df.replace('\ufe0f', '', regex=True)
         df = df.replace('\u02da', '', regex=True)
         df = df.replace('\u266b', '', regex=True)
+        df = df.replace('\u21db', '', regex=True)
 
         # DataFrame を CSV ファイルに出力
         df.to_csv(input_file_path, sep=',', encoding='CP932', index=False)
