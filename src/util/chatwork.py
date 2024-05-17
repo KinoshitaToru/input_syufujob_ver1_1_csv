@@ -19,7 +19,8 @@ class Chatwork():
 
         # postする情報成形
         self.forming_headers()
-        self.forming_body(operator)
+        self.operator = [x.strip() for x in operator.split(',')]
+        self.forming_body(self.operator)
         self.forming_options()
 
     def forming_headers(self):
@@ -28,8 +29,10 @@ class Chatwork():
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-    def forming_body(self, operator: str):
-        self.body = operator + '\n'
+    def forming_body(self, operators: list):
+        self.body = ""
+        for operator in operators:
+            self.body += operator + '\n'
         self.body += 'しゅふジョブ　求人内容登録 についての通知\n'
         for msg in self.message:
             self.body += '[code]'
