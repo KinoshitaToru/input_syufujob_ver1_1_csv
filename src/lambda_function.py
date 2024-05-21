@@ -168,6 +168,11 @@ def lambda_handler(event, context):
         df = df.replace('\u2f49', '', regex=True)
         df = df.replace('\u2f0a', '', regex=True)
         df = df.replace('\ufe15', '!', regex=True)
+        df = df.replace('\u2f3c', '', regex=True)
+        df = df.replace('\ufe13', ':', regex=True)
+        df = df.replace('\u2f3f', '頁', regex=True)
+        df = df.replace('\u2f40', '革', regex=True)
+        df = df.replace('\u2f65', '鬼', regex=True)
 
         # DataFrame を CSV ファイルに出力
         df.to_csv(input_file_path, sep=',', encoding='CP932', index=False)
@@ -350,8 +355,8 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            'sheetId':'1lVJC1HpL0fBX53kCreaN3HEezwnTVl3agbeA7r7Rt7o',
-            'companyName':'yoshikeihiroshima'
+            'sheetId':'1ASZKYDXXCnWKsh4xOs82wlvfMhqIVOIicYZmZ8LbPh8',
+            'companyName':'dym'
 
                },
         context=None)
