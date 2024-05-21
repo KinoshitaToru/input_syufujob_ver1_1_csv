@@ -151,7 +151,23 @@ def lambda_handler(event, context):
         df = df.replace('\u02da', '', regex=True)
         df = df.replace('\u266b', '', regex=True)
         df = df.replace('\u21db', '', regex=True)
-        df = df.replace('\u2f6c', '', regex=True)
+        df = df.replace('\u2f6c', '目', regex=True)
+        df = df.replace('\u2ec4', '西', regex=True)
+        df = df.replace('\ufe16', '', regex=True)
+        df = df.replace('\u2f8f', '行', regex=True)
+        df = df.replace('\u2f08', '人', regex=True)
+        df = df.replace('\u2f92', '見', regex=True)
+        df = df.replace('\u2f45', '方', regex=True)
+        df = df.replace('\u203e', '', regex=True)
+        df = df.replace('\u21d3', '\u2193', regex=True)
+        df = df.replace('\xab', '≪', regex=True)
+        df = df.replace('\xbb', '≫', regex=True)
+        df = df.replace('\uf98e', '', regex=True)
+        df = df.replace('\u2f74', '々', regex=True)
+        df = df.replace('\u2f47', '', regex=True)
+        df = df.replace('\u2f49', '', regex=True)
+        df = df.replace('\u2f0a', '', regex=True)
+        df = df.replace('\ufe15', '!', regex=True)
 
         # DataFrame を CSV ファイルに出力
         df.to_csv(input_file_path, sep=',', encoding='CP932', index=False)
@@ -334,8 +350,8 @@ def lambda_handler(event, context):
 if __name__ == '__main__':
     lambda_handler(
         event={
-            'sheetId':'1l-lyjJlmSjwovYsxS0H7Ek9JsjwEFZz3zSXNc2Bq_jA',
-            'companyName':'dym'
+            'sheetId':'1lVJC1HpL0fBX53kCreaN3HEezwnTVl3agbeA7r7Rt7o',
+            'companyName':'yoshikeihiroshima'
 
                },
         context=None)

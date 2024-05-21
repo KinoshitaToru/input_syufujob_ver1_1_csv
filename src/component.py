@@ -538,6 +538,7 @@ def remove_duplicates(sheet, trash, job_id_data_total, total_job_list):
     new_row_nums = [i + 2 for i, job_id in enumerate(job_id_data_total) if job_id not in trash_id_datas]
     print(new_row_nums)
 
+    time.sleep(60)
     # それぞれの行のデータを取得しリストにまとめる
     new_rows = [total_job_list.row_values(row_num) for row_num in new_row_nums]
     print(new_rows)
